@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using AuditWebHook.Entities;
 using AuditWebHook.Queue;
+using AuditWebHook.Utilities;
 using AuditWebHook.WebHooks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -15,6 +16,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static AuditWebHook.Utilities.AuthenticationHelper;
 
 namespace AuditWebHook
 {
@@ -58,7 +60,7 @@ namespace AuditWebHook
                     CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
                     AuditContentUriQueue = queueClient.GetQueueReference("auditcontenturi");
                     await AuditContentUriQueue.CreateIfNotExistsAsync();
-                  }
+                }
 
                 log.LogInformation($"Content Queue Message: {auditcontent.ContentUri}");
                 AuditContentQueue acq = new AuditContentQueue
@@ -83,9 +85,28 @@ namespace AuditWebHook
             log.LogInformation($"Reading in Audit ContentQueue for : {auditContentQueue.ContentType} Tenant: {auditContentQueue.TenantID} ContentUri:{auditContentQueue.ContentUri} ");
 
             //GetLogs
-                                   
-           
-            }
+            string token = await AcquireTokenForApplication();
+
+            var uri = auditContentQueue.ContentUri;
+
+
+            do
+            {
+                uri = uri.Contains("?") ? $"{uri}&PublisherIdentifier={auditContentQueue.TenantID}" : $"{uri}?PublisherIdentifier={auditContentQueue.TenantID}";
+                log.LogInformation($"URL:{uri}");
+                var results = await RestAPI.GetRestDataAsync(uri, token);
+                var array = JArray.Parse(results.RestResponse);
+                
+                foreach(var logEntry in array)
+                {
+                    log.LogInformation(logEntry.ToString());
+                }
+
+                //var jquery2 = new JArray(array.SelectTokens("$.[?(@.RecordType == 25 && @.Operation == 'ChannelAdded' && @.ChannelType == 'Private')]"));
+
+                uri = results.WebHeaderCollections.Get("NextPageUri");
+            } while (uri != null);
         }
     }
 }
+
