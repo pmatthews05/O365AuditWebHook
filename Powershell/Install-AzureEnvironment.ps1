@@ -20,7 +20,7 @@ param(
 	[string]
 	$Name,
 	[string]
-	$Location = "uksouth",
+	$Location = "uksouth"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,7 +42,7 @@ Write-Information -Message:"Creating the $Identifier resource group..."
 Invoke-AzCommand -command:"az group create --name $Identifier"
 
 Write-Information "Setting the Azure CLI defaults..."
-Invoke-AzCommand -command"az configure --defaults location=$Location group=$Identifier"
+Invoke-AzCommand -command:"az configure --defaults location=$Location group=$Identifier"
 
 [string]$StorageAccountName = ConvertTo-StorageAccountName -Name:$Identifier
 
