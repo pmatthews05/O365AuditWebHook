@@ -27,10 +27,12 @@ namespace AuditWebHook.Utilities
             int backoffInterval = delay;
             
             var request = (HttpWebRequest)WebRequest.Create(restEndpoint);
+
+            var tenant = System.Environment.GetEnvironmentVariable("Tenant", EnvironmentVariableTarget.Process);
             // set headers as appropriate
             request.Method = "POST";
             request.ContentLength = 0;
-            request.UserAgent = string.IsNullOrEmpty(userAgent) ? "NONISV|NONAME|AuditLogs/1.0" : userAgent;
+            request.UserAgent = string.IsNullOrEmpty(userAgent) ? $"NONISV|{tenant}|AuditLogs/1.0" : userAgent;
             request.Headers.Add("Authorization", "Bearer " + token);
 
             request.Accept = "application/json;";
@@ -106,11 +108,13 @@ namespace AuditWebHook.Utilities
             int backoffInterval = delay;
 
             var request = (HttpWebRequest)WebRequest.Create(restEndpoint);
+            var tenant = System.Environment.GetEnvironmentVariable("Tenant", EnvironmentVariableTarget.Process);
+
             // set headers as appropriate
             request.Method = "GET";
             request.Headers.Add("Authorization", "Bearer " + token);
             request.Accept = "application/json;";
-            request.UserAgent = string.IsNullOrEmpty(userAgent) ? "NONISV|NONAME|AuditLogs/1.0" : userAgent;
+            request.UserAgent = string.IsNullOrEmpty(userAgent) ? $"NONISV|{tenant}|AuditLogs/1.0" : userAgent;
 
             while (retryAttempts < retryCount)
             {
